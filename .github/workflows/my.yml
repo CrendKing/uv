@@ -1,0 +1,38 @@
+name: Sync with upstream
+
+on:
+  schedule:
+    - cron: '0 0 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  sync-upstream:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 2
+
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Pull upstream
+        run: |
+          git remote add upstream https://github.com/astral-sh/uv.git
+          git pull upstream main --depth 1
+
+      - name: Build
+        run: |
+          cargo build --release --features=performance,windows-gui-bin --no-default-features
+
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          path: |
+            target/release/uv.exe
+            target/release/uvx.exe
+            target/release/uvw.exe
+          if-no-files-found: error
